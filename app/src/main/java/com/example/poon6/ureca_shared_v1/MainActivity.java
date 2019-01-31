@@ -3,10 +3,7 @@ package com.example.poon6.ureca_shared_v1;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioRecord;
-import android.media.AudioTrack;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -18,17 +15,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.poon6.ureca_shared_v1.Adapter.ChatMessageAdapter;
 import com.example.poon6.ureca_shared_v1.Model.ChatMessage;
 
-import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONArray;
@@ -37,10 +30,12 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+
+import ai.api.android.AIConfiguration;
+import ai.api.android.AIService;
+import ai.api.model.AIResponse;
 
 import static android.os.Environment.DIRECTORY_MUSIC;
 
@@ -66,8 +61,11 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton btnSend;
     private FloatingActionButton btnSpeech;
     private EditText mEditText;
-
     private ChatMessageAdapter adapter;
+
+    private AIService aiService;
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -83,10 +81,20 @@ public class MainActivity extends AppCompatActivity {
 
         btnSend.setOnClickListener(sendListener);
         btnSpeech.setOnTouchListener(speechListener);
+
+        initChatBot();
+    }
+
+    private void initChatBot() {
+        final AIConfiguration config = new AIConfiguration("<your client access token>",
+                ai.api.AIConfiguration.SupportedLanguages.English,
+                AIConfiguration.RecognitionEngine.System);
+        aiService = AIService.getService(this, config);
+
     }
 
     // display reply from server to user
-    private void botReply(String response) {
+    protected void displayBotReply(String response) {
         ChatMessage chatMessage = new ChatMessage(false, false, response);
         adapter.add(chatMessage);
     }
@@ -95,8 +103,23 @@ public class MainActivity extends AppCompatActivity {
         ChatMessage chatMessage = new ChatMessage(false, true, message);
         adapter.add(chatMessage);
 
-        // TODO
-        // send message to server
+        // send message to server using AsyncTask
+        QueryTask queryTask = new QueryTask(MainActivity.this, aiService);
+        queryTask.execute(message);
+    }
+
+    protected String extractData(AIResponse aiResponse) {
+        String botReply = null;
+
+        if (aiResponse != null) {
+            // process aiResponse here
+            botReply = aiResponse.getResult().getFulfillment().getSpeech();
+            Log.d(TAG, "extractData: Bot Reply: " + botReply);
+        } else {
+            Log.d(TAG, "extractData: Bot Reply: Null");
+        }
+
+        return botReply;
     }
 
     private final View.OnClickListener sendListener = new View.OnClickListener() {
@@ -107,12 +130,6 @@ public class MainActivity extends AppCompatActivity {
             sendMessage(message);
 
             mEditText.setText("");
-
-            // TODO
-            // response from server
-            String response = "Hello There";
-
-            botReply(response);
         }
     };
 
@@ -145,8 +162,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private String getFilePath() {
-        String filePath = (Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getAbsolutePath() + "/test_audio_record.pcm");
-        return filePath;
+        return (Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getAbsolutePath() + "/test_audio_record.pcm");
     }
 
 
@@ -295,8 +311,7 @@ public class MainActivity extends AppCompatActivity {
         Uri.Builder builder = new Uri.Builder();
 
         builder.scheme("ws")
-                .encodedAuthority("118.189.188.87:8888")    // global
-//                    .encodedAuthority("155.69.146.209:8888")  // NTU network
+                .encodedAuthority("<your server address>")
                 .appendPath("client")
                 .appendPath("ws")
                 .appendPath("speech");

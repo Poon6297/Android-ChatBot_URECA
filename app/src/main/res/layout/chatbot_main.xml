@@ -33,6 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
+            android:autofillHints="Order here"
             android:layout_weight="1"/>
 
         <!--TODO-->
@@ -41,7 +42,7 @@
             android:id="@+id/btn_speech"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/send"
+            android:src="@drawable/mic"
             android:layout_marginRight="5dp"/>
 
 

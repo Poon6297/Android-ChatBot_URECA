@@ -16,6 +16,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/INDEX.LIST'
+    }
 }
 
 dependencies {
@@ -27,6 +39,16 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+    // chatbot layout dependencies
     implementation 'com.android.support:design:27.1.1'
     implementation 'me.himanshusoni.chatmessageview:chat-message-view:1.0.3'
+
+    // Dialogflow  SDK dependencies
+    implementation 'ai.api:sdk:2.0.7@aar'
+    implementation 'ai.api:libai:1.6.12'
+
+    // Java V2
+    implementation 'com.google.cloud:google-cloud-dialogflow:0.67.0-alpha'
+    // for Remote Procedure Call to avoid "No functional channel service provider found" error while creating SessionsClient
+    implementation 'io.grpc:grpc-okhttp:1.15.1'
 }
