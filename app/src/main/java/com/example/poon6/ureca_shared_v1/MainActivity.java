@@ -31,6 +31,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 import ai.api.android.AIConfiguration;
@@ -45,15 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
     // CONSTANTS
     private final int REQUEST_PERMISSION_CODE = 1000;
-    private int SAMPLE_RATE = 44100 ;
-    private int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
-    private int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    private int MIN_BUFF_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 3;
 
-
-    private String filePath;
-    private WavRecorder wavRecorder;
-    private WebSocketClient mWebSocketClient;
+    private URI uri = null;
+    private AudioStream audioStream;
 
     // TODO
     // change to recycler view
@@ -64,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
     private ChatMessageAdapter adapter;
 
     private AIService aiService;
-
 
 
     @Override
@@ -138,13 +132,14 @@ public class MainActivity extends AppCompatActivity {
         public boolean onTouch(View v, MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (checkPermissionFromDevice()) {
-                    filePath = getFilePath();
-                    Log.d(TAG, "onClick: " + filePath);
+                    try {
+                        uri = getURI();
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
 
-                    wavRecorder = new WavRecorder(filePath);
-                    startRecord(wavRecorder);
-
-                    Toast.makeText(MainActivity.this, "Recording...", Toast.LENGTH_SHORT).show();
+                    audioStream = new AudioStream(MainActivity.this, uri);
+                    audioStream.startStreaming();
                 } else {
                     requestPermission();
                 }
@@ -152,20 +147,12 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (event.getAction() == MotionEvent.ACTION_UP) {
-                stopRecord(wavRecorder);
-                Log.d("debug","Recorder released");
-                sendAudio(filePath);
+                audioStream.stopStreaming();
                 return true;
             }
             return false;
         }
     };
-
-    private String getFilePath() {
-        return (Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getAbsolutePath() + "/test_audio_record.pcm");
-    }
-
-
 
     private void requestPermission() {
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO};
@@ -178,7 +165,14 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_PERMISSION_CODE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
-                    startRecord(wavRecorder);
+                    try {
+                        uri = getURI();
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+
+                    audioStream = new AudioStream(MainActivity.this, uri);
+                    audioStream.startStreaming();
                 } else {
                     Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
                 }
@@ -195,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void displayReply(final String txt) {
+    protected void displaySpeechReply(final String txt) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -204,117 +198,15 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
-    private void startRecord(WavRecorder wavRecorder) {
-        wavRecorder.startRecording();
-    }
-
-    private void stopRecord(WavRecorder wavRecorder) {
-        wavRecorder.stopRecording();
-    }
-
-    private void sendAudio(String filePath) {
-        byte[] audioByte = getByteArrayFromFile(filePath);
-
-        connectWebSocket();
-
-        mWebSocketClient.send(audioByte);
-    }
-
-    private byte[] getByteArrayFromFile(String filePath) {
-
-        File file = new File(filePath);
-        byte[] audioByte = new byte[(int) file.length()];
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            fis.read(audioByte);
-            fis.close();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        return audioByte;
-    }
-
-    private void connectWebSocket() {
-        try {
-            URI uri = getURI();
-            mWebSocketClient = new WebSocketClient(uri) {
-                @Override
-                public void onOpen(ServerHandshake handshakedata) {
-
-                }
-
-                @Override
-                public void onMessage(String message) {
-                    try {
-                        JSONObject requestJSON = new JSONObject(message);
-                        String requestString = requestJSON.toString();
-                        Log.d(TAG, "requestString: " + requestString);
-                        int status = requestJSON.getInt("status");
-                        switch(status) {
-                            case 0:
-                                Log.d(TAG, "onMessage: success");
-                                JSONObject resultJSON = requestJSON.getJSONObject("result");
-                                boolean isFinal = resultJSON.getBoolean("final");
-                                if (isFinal) {
-                                    Log.d(TAG, "onMessage: 1st result");
-                                    JSONArray hypothesesArray = resultJSON.getJSONArray("hypotheses");
-                                    JSONObject hypothesesJSONObject = hypothesesArray.getJSONObject(0);
-                                    String transcript = hypothesesJSONObject.getString("transcript");
-
-                                    // TODO
-                                    displayReply(transcript);
-                                }
-                                break;
-                            case 2:
-                                Log.d(TAG, "onMessage: aborted");
-                                break;
-                            case 1:
-                                Log.d(TAG, "onMessage: no speech");
-                                break;
-                            case 9:
-                                Log.d(TAG, "onMessage: not available");
-                                break;
-                            default:
-                                Log.d(TAG, "onMessage: default case.");
-                                Log.d(TAG, "onMessage: " + status);
-                                break;
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onClose(int code, String reason, boolean remote) {
-                    Log.d(TAG, "onClose: " + code + reason);
-                }
-
-                @Override
-                public void onError(Exception ex) {
-                    Log.d(TAG, "onError: " + ex.getMessage());
-                }
-            };
-
-            boolean connected = mWebSocketClient.connectBlocking();
-            Log.d(TAG, "connectWebSocket: " + connected);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.d(TAG, "onCreate: url exception");
-        }
-    }
-
     private URI getURI() throws java.net.URISyntaxException {
 
         Uri.Builder builder = new Uri.Builder();
 
         builder.scheme("ws")
-                .encodedAuthority("<your server address>")
+                .encodedAuthority("118.189.188.87:8888")
                 .appendPath("client")
                 .appendPath("ws")
-                .appendPath("speech");
+                .appendEncodedPath("speech?content-type=audio/x-raw,+layout=(string)interleaved,+rate=(int)16000,+format=(string)S16LE,+channels=(int)1");
 
         Uri aUri = builder.build();
         URI jUri = new URI(aUri.toString());
