@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initChatBot() {
-        final AIConfiguration config = new AIConfiguration("<your client access token>",
+        final AIConfiguration config = new AIConfiguration("00b66b29848a4c8d9edc270b029f3b8b",
                 ai.api.AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
         aiService = AIService.getService(this, config);
@@ -203,7 +203,8 @@ public class MainActivity extends AppCompatActivity {
         Uri.Builder builder = new Uri.Builder();
 
         builder.scheme("ws")
-                .encodedAuthority("118.189.188.87:8888")
+                .encodedAuthority("118.189.188.87:8888")    // global
+//                    .encodedAuthority("155.69.146.209:8888")  // NTU network
                 .appendPath("client")
                 .appendPath("ws")
                 .appendEncodedPath("speech?content-type=audio/x-raw,+layout=(string)interleaved,+rate=(int)16000,+format=(string)S16LE,+channels=(int)1");
