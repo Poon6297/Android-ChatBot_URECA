@@ -2,11 +2,8 @@ package com.example.poon6.ureca_shared_v1;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -16,29 +13,19 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.poon6.ureca_shared_v1.Adapter.ChatMessageAdapter;
 import com.example.poon6.ureca_shared_v1.Model.ChatMessage;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.File;
-import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 import ai.api.android.AIConfiguration;
 import ai.api.android.AIService;
-import ai.api.model.AIResponse;
-
-import static android.os.Environment.DIRECTORY_MUSIC;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -61,6 +48,12 @@ public class MainActivity extends AppCompatActivity {
     private AIService aiService;
 
 
+
+    // test card reply
+    ImageView iv;
+
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +70,11 @@ public class MainActivity extends AppCompatActivity {
         btnSpeech.setOnTouchListener(speechListener);
 
         initChatBot();
+
+
+
+        // test card reply
+        iv = findViewById(R.id.iv_test);
     }
 
     private void initChatBot() {
@@ -100,20 +98,6 @@ public class MainActivity extends AppCompatActivity {
         // send message to server using AsyncTask
         QueryTask queryTask = new QueryTask(MainActivity.this, aiService);
         queryTask.execute(message);
-    }
-
-    protected String extractData(AIResponse aiResponse) {
-        String botReply = null;
-
-        if (aiResponse != null) {
-            // process aiResponse here
-            botReply = aiResponse.getResult().getFulfillment().getSpeech();
-            Log.d(TAG, "extractData: Bot Reply: " + botReply);
-        } else {
-            Log.d(TAG, "extractData: Bot Reply: Null");
-        }
-
-        return botReply;
     }
 
     private final View.OnClickListener sendListener = new View.OnClickListener() {
@@ -215,6 +199,10 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "getURI: " + jUri);
 
         return jUri;
+    }
+
+    protected void setImageView(String uriString) {
+        iv.setImageURI(Uri.parse(uriString));
     }
 }
 

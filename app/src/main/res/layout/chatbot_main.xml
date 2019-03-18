@@ -18,6 +18,9 @@
         android:layout_above="@id/send_message_layout"
         android:divider="@null"/>
 
+
+
+
     <LinearLayout
         android:id="@+id/send_message_layout"
         android:layout_width="match_parent"
@@ -26,6 +29,13 @@
         android:background="#ffdddddd"
         android:layout_alignParentBottom="true"
         android:gravity="center_vertical">
+
+        <!--test card reply-->
+        <ImageView
+        android:id="@+id/iv_test"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/mic"/>
 
         <EditText
             android:id="@+id/edit_text"
