@@ -41,6 +41,7 @@ public class QueryTask extends AsyncTask<String, Void, AIResponse> {
     protected void onPostExecute(AIResponse aiResponse) {
         Log.d(TAG, "onPostExecute: " + aiResponse);
         List<ResponseMessage> responseMessages = extractData(aiResponse);
+        List<ResponseMessage.ResponseCard> cardList = new ArrayList<>();
         for (ResponseMessage responseMessage : responseMessages) {
             if (responseMessage instanceof ResponseMessage.ResponseSpeech) {
                 List<String> speechList = ((ResponseMessage.ResponseSpeech) responseMessage).getSpeech();
@@ -53,32 +54,33 @@ public class QueryTask extends AsyncTask<String, Void, AIResponse> {
                 String title = (((ResponseMessage.ResponseQuickReply) responseMessage).getTitle());
                 ((MainActivity) activity).displayBotReply(title);
 
-                // TODO: Display quickReplies in button form
-                for (String quickReply : ((ResponseMessage.ResponseQuickReply) responseMessage).getReplies()) {
-                    ((MainActivity) activity).displayBotReply(quickReply);
-                }
+                List<String> quickReply = ((ResponseMessage.ResponseQuickReply) responseMessage).getReplies();
+                ((MainActivity) activity).displayBotReply(quickReply);
             }
 
             // TODO: Display image properly
             if (responseMessage instanceof ResponseMessage.ResponseCard) {
-                String uriString = ((ResponseMessage.ResponseCard) responseMessage).getImageUrl();
-                ((MainActivity) activity).setImageView(uriString);
+                cardList.add((ResponseMessage.ResponseCard) responseMessage);
 
-                String title = ((ResponseMessage.ResponseCard) responseMessage).getTitle();
-                ((MainActivity) activity).displayBotReply(title);
+//                String uriString = ((ResponseMessage.ResponseCard) responseMessage).getImageUrl();
+//                ((MainActivity) activity).setImageView(uriString);
+//
+//                String title = ((ResponseMessage.ResponseCard) responseMessage).getTitle();
+//                ((MainActivity) activity).displayBotReply(title);
             }
+        }
+        if (cardList.size() > 0) {
+            ((MainActivity) activity).displayCard(cardList);
         }
     }
 
-    protected List extractData(AIResponse aiResponse) {
+    private List extractData(AIResponse aiResponse) {
         List botReply = new ArrayList<>();
 
         if (aiResponse != null) {
             // process aiResponse here
             List responseMessageList = aiResponse.getResult().getFulfillment().getMessages();
-            for (int i=0; i<responseMessageList.size(); i++) {
-                botReply.add(responseMessageList.get(i));
-            }
+            botReply.addAll(responseMessageList);
         } else {
             Log.d(TAG, "extractData: aiResponse is null.");
         }

@@ -9,23 +9,23 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.Toast;
 
-import com.example.poon6.ureca_shared_v1.Adapter.ChatMessageAdapter;
-import com.example.poon6.ureca_shared_v1.Model.ChatMessage;
+import com.example.poon6.ureca_shared_v1.Adapter.ParentAdapter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.List;
 
 import ai.api.android.AIConfiguration;
 import ai.api.android.AIService;
+import ai.api.model.ResponseMessage;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,42 +39,36 @@ public class MainActivity extends AppCompatActivity {
 
     // TODO
     // change to recycler view
-    private ListView mListView;
+    private RecyclerView mRecyclerView;
     private FloatingActionButton btnSend;
     private FloatingActionButton btnSpeech;
     private EditText mEditText;
-    private ChatMessageAdapter adapter;
+    private ParentAdapter adapter;
 
     private AIService aiService;
 
-
-
-    // test card reply
-    ImageView iv;
-
-
+    //   for recycler view
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chatbot_main);
-        mListView = findViewById(R.id.list_view);
+        mRecyclerView = findViewById(R.id.recycler_view);
         btnSend = findViewById(R.id.btn_send);
         btnSpeech = findViewById(R.id.btn_speech);
         mEditText = findViewById(R.id.edit_text);
 
-        adapter = new ChatMessageAdapter(this, new ArrayList<ChatMessage>());
-        mListView.setAdapter(adapter);
+        mRecyclerView.setHasFixedSize(true);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        adapter = new ParentAdapter(this);
+        mRecyclerView.setAdapter(adapter);
 
         btnSend.setOnClickListener(sendListener);
         btnSpeech.setOnTouchListener(speechListener);
 
         initChatBot();
-
-
-
-        // test card reply
-        iv = findViewById(R.id.iv_test);
     }
 
     private void initChatBot() {
@@ -87,13 +81,23 @@ public class MainActivity extends AppCompatActivity {
 
     // display reply from server to user
     protected void displayBotReply(String response) {
-        ChatMessage chatMessage = new ChatMessage(false, false, response);
-        adapter.add(chatMessage);
+        adapter.add(false, false, response);
+        mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+    }
+
+    protected void displayBotReply(List<String> quickReply) {
+        adapter.add(quickReply);
+        mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+    }
+
+    protected void displayCard(List<ResponseMessage.ResponseCard> cardList) {
+        adapter.addCard(cardList);
+        mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
     }
 
     private void sendMessage(String message) {
-        ChatMessage chatMessage = new ChatMessage(false, true, message);
-        adapter.add(chatMessage);
+        adapter.add(false, true, message);
+        mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
 
         // send message to server using AsyncTask
         QueryTask queryTask = new QueryTask(MainActivity.this, aiService);
@@ -202,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void setImageView(String uriString) {
-        iv.setImageURI(Uri.parse(uriString));
+//        iv.setImageURI(Uri.parse(uriString));
     }
 }
 
