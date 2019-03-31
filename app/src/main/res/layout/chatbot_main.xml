@@ -28,13 +28,6 @@
         android:layout_alignParentBottom="true"
         android:gravity="center_vertical">
 
-        <!--test card reply-->
-        <ImageView
-        android:id="@+id/iv_test"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/mic"/>
-
         <EditText
             android:id="@+id/edit_text"
             android:layout_width="0dp"

@@ -14,6 +14,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        adapter = new ParentAdapter(this);
+        adapter = new ParentAdapter(this, quickReplyListener);
         mRecyclerView.setAdapter(adapter);
 
         btnSend.setOnClickListener(sendListener);
@@ -95,27 +96,42 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
     }
 
-    private void sendMessage(String message) {
+    private void displayUserMessage(String message) {
         adapter.add(false, true, message);
         mRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+    }
 
+    private void sendMessage(String message) {
         // send message to server using AsyncTask
         QueryTask queryTask = new QueryTask(MainActivity.this, aiService);
         queryTask.execute(message);
     }
+
+    private final View.OnClickListener quickReplyListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            adapter.removeQuickReplyView();
+
+            String data = ((Button) v).getText().toString();
+            sendMessage(data);
+        }
+    };
 
     private final View.OnClickListener sendListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             String message = mEditText.getText().toString();
 
-            sendMessage(message);
-
-            mEditText.setText("");
+            if (!message.equals("")) {
+                sendMessage(message);
+                displayUserMessage(message);
+                mEditText.setText("");
+            }
         }
     };
 
     private final View.OnTouchListener speechListener = new View.OnTouchListener() {
+
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {

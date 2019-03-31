@@ -31,13 +31,19 @@ public class ParentAdapter extends RecyclerView.Adapter<ParentAdapter.BaseViewHo
     private static final int BOT_CARD = 3;
 
     private Context mContext;
+    private View.OnClickListener quickReplyListener;
 
     private RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
 
     private List<Object> mDataSet = new ArrayList<>();
 
-    public ParentAdapter(Context context) {
+    //  to record the position of quick reply view in mDataSet
+    private int quickReplyPosition;
+
+    public ParentAdapter(Context context, View.OnClickListener quickReplyListener) {
         this.mContext = context;
+        this.quickReplyListener = quickReplyListener;
+        this.quickReplyPosition = -1;
     }
 
     @NonNull
@@ -138,6 +144,10 @@ public class ParentAdapter extends RecyclerView.Adapter<ParentAdapter.BaseViewHo
             mBtn1.setText(data.getButton1());
             mBtn2.setText(data.getButton2());
             mBtn3.setText(data.getButton3());
+
+            mBtn1.setOnClickListener(quickReplyListener);
+            mBtn2.setOnClickListener(quickReplyListener);
+            mBtn3.setOnClickListener(quickReplyListener);
         }
     }
 
@@ -175,6 +185,11 @@ public class ParentAdapter extends RecyclerView.Adapter<ParentAdapter.BaseViewHo
     }
 
     public void add(List<String> dataList) {
+        if (quickReplyPosition != -1) {
+            mDataSet.remove(quickReplyPosition);
+        }
+        quickReplyPosition = mDataSet.size();
+
         QuickReply quickReply = new QuickReply(dataList);
         mDataSet.add(quickReply);
         notifyDataSetChanged();
@@ -190,5 +205,11 @@ public class ParentAdapter extends RecyclerView.Adapter<ParentAdapter.BaseViewHo
 
         mDataSet.add(cardList);
         notifyDataSetChanged();
+    }
+
+    public void removeQuickReplyView() {
+        mDataSet.remove(quickReplyPosition);
+        notifyDataSetChanged();
+        this.quickReplyPosition = -1;
     }
 }
